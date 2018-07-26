@@ -34,10 +34,10 @@ public abstract class TitleManager {
     /**
      * Create a new 1.8 title.
      *
-     * @param title Title text
-     * @param subtitle Subtitle text
-     * @param fadeInTime Fade in time
-     * @param stayTime Stay on screen time
+     * @param title       Title text
+     * @param subtitle    Subtitle text
+     * @param fadeInTime  Fade in time
+     * @param stayTime    Stay on screen time
      * @param fadeOutTime Fade out time
      */
     TitleManager(String title, String subtitle, int fadeInTime, int stayTime, int fadeOutTime) {
@@ -185,7 +185,7 @@ public abstract class TitleManager {
      * @throws ReflectiveOperationException
      * @throws SecurityException
      */
-    public abstract void resetTitle(Player player) throws  IllegalArgumentException, ReflectiveOperationException, SecurityException;
+    public abstract void resetTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException;
 
     private Class<?> getPrimitiveType(Class<?> clazz) {
         if (CORRESPONDING_TYPES.containsKey(clazz)) {

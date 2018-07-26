@@ -39,9 +39,9 @@ public class DefaultTitleManager_183 extends DefaultTitleManager {
             resetTitle(player);
             // Send timings first
             Object handle = getHandle(player);
-            Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+            Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
             Object[] actions = this.packetActions.getEnumConstants();
-            Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+            Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
             Object packet = this.packetTitle
                     .getConstructor(this.packetActions, this.chatBaseComponent, Integer.TYPE, Integer.TYPE, Integer.TYPE)
                     .newInstance(actions[2], null,

@@ -1,13 +1,13 @@
 package com.plotsquared.bukkit.titles;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 
 /**
  * Minecraft 1.8 Title
@@ -119,8 +119,8 @@ public class TitleManager_1_11 {
             nmsPlayer = getNMSClass("EntityPlayer");
             nmsPlayerConnection = getNMSClass("PlayerConnection");
             playerConnection = getField(nmsPlayer,
-                    "playerConnection");
-            sendPacket = getMethod(nmsPlayerConnection, "sendPacket");
+                    "playerConnection", "field_71135_a");
+            sendPacket = getMethod(nmsPlayerConnection, "sendPacket", "func_147359_a");
             obcPlayer = getOBCClass("entity.CraftPlayer");
             methodPlayerGetHandle = getMethod("getHandle", obcPlayer);
         }
@@ -304,10 +304,10 @@ public class TitleManager_1_11 {
             try {
                 Object handle = getHandle(player);
                 Object connection = getField(handle.getClass(),
-                        "playerConnection").get(handle);
+                        "playerConnection", "field_71135_a").get(handle);
                 Object[] actions = TitleManager_1_11.packetActions.getEnumConstants();
                 Method sendPacket = getMethod(connection.getClass(),
-                        "sendPacket");
+                        "sendPacket", "func_147359_a");
                 Object serialized = nmsChatSerializer.getConstructor(
                         String.class)
                         .newInstance(titleColor +
@@ -368,8 +368,7 @@ public class TitleManager_1_11 {
             Object handle = getHandle(player);
             Object connection = playerConnection.get(handle);
             Object[] actions = packetActions.getEnumConstants();
-            Object packet = packetTitle.getConstructor(packetActions,
-                    chatBaseComponent).newInstance(actions[4], null);
+            Object packet = packetTitle.getConstructor(packetActions, chatBaseComponent).newInstance(actions[4], null);
             sendPacket.invoke(connection, packet);
         } catch (Exception e) {
             e.printStackTrace();
@@ -387,8 +386,7 @@ public class TitleManager_1_11 {
             Object handle = getHandle(player);
             Object connection = playerConnection.get(handle);
             Object[] actions = packetActions.getEnumConstants();
-            Object packet = packetTitle.getConstructor(packetActions,
-                    chatBaseComponent).newInstance(actions[5], null);
+            Object packet = packetTitle.getConstructor(packetActions, chatBaseComponent).newInstance(actions[5], null);
             sendPacket.invoke(connection, packet);
         } catch (Exception e) {
             e.printStackTrace();
@@ -396,8 +394,7 @@ public class TitleManager_1_11 {
     }
 
     private Class<?> getPrimitiveType(Class<?> clazz) {
-        return CORRESPONDING_TYPES.containsKey(clazz) ? CORRESPONDING_TYPES
-                .get(clazz) : clazz;
+        return CORRESPONDING_TYPES.containsKey(clazz) ? CORRESPONDING_TYPES.get(clazz) : clazz;
     }
 
     private Class<?>[] toPrimitiveTypeArray(Class<?>[] classes) {
@@ -426,8 +423,7 @@ public class TitleManager_1_11 {
         }
     }
 
-    private Method getMethod(String name, Class<?> clazz,
-                             Class<?>... paramTypes) {
+    private Method getMethod(String name, Class<?> clazz, Class<?>... paramTypes) {
         Class<?>[] t = toPrimitiveTypeArray(paramTypes);
         for (Method m : clazz.getMethods()) {
             Class<?>[] types = toPrimitiveTypeArray(m.getParameterTypes());
@@ -447,14 +443,15 @@ public class TitleManager_1_11 {
         return getNMSClass(className, null);
     }
 
-    private Class<?> getNMSClass(String className, String fullMcpName) {
+    private Class<?> getNMSClass(String className, String mcpName) {
         Class<?> clazz = null;
-        if (fullMcpName != null && fullMcpName.startsWith("net.minecraft.")) {
+        if (mcpName != null) {
+            mcpName = "net.minecraft." + mcpName;
             try {
-                clazz = Class.forName(fullMcpName);
+                clazz = Class.forName(mcpName);
                 return clazz;
             } catch (Exception ignored) {
-                System.out.println("Mcp class [" + fullMcpName + "] invalid, check NMS class continue...");
+                System.out.println("Mcp class [" + mcpName + "] invalid, check NMS class continue...");
             }
         }
         String fullName = "net.minecraft.server." + getVersion() + className;
@@ -477,8 +474,19 @@ public class TitleManager_1_11 {
         return clazz;
     }
 
+    Field getField(Class<?> clazz, String name) {
+        return getField(clazz, name, null);
+    }
 
-    private Field getField(Class<?> clazz, String name) {
+    Field getField(Class<?> clazz, String name, String mcpName) {
+        if (mcpName != null) {
+            try {
+                Field field = clazz.getDeclaredField(mcpName);
+                field.setAccessible(true);
+                return field;
+            } catch (Throwable ignored) {
+            }
+        }
         try {
             Field field = clazz.getDeclaredField(name);
             field.setAccessible(true);
@@ -489,14 +497,17 @@ public class TitleManager_1_11 {
         }
     }
 
-    private Method getMethod(Class<?> clazz, String name, Class<?>... args) {
-        for (Method m : clazz.getMethods())
-            if (m.getName().equals(name)
-                    && (args.length == 0 || ClassListEqual(args,
-                    m.getParameterTypes()))) {
+    Method getMethod(Class<?> clazz, String name, Class<?>... args) {
+        return getMethod(clazz, name, null, args);
+    }
+
+    Method getMethod(Class<?> clazz, String name, String mcpName, Class<?>... args) {
+        for (Method m : clazz.getMethods()) {
+            if ((m.getName().equals(name) || m.getName().equals(mcpName)) && (args.length == 0 || ClassListEqual(args, m.getParameterTypes()))) {
                 m.setAccessible(true);
                 return m;
             }
+        }
         return null;
     }
 

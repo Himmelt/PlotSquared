@@ -13,10 +13,10 @@ public class HackTitleManager extends TitleManager {
     /**
      * Create a new 1.8 title.
      *
-     * @param title Title text
-     * @param subtitle Subtitle text
-     * @param fadeInTime Fade in time
-     * @param stayTime Stay on screen time
+     * @param title       Title text
+     * @param subtitle    Subtitle text
+     * @param fadeInTime  Fade in time
+     * @param stayTime    Stay on screen time
      * @param fadeOutTime Fade out time
      */
     HackTitleManager(String title, String subtitle, int fadeInTime, int stayTime, int fadeOutTime) {
@@ -33,15 +33,16 @@ public class HackTitleManager extends TitleManager {
         this.nmsChatSerializer = Reflection.getNMSClass("ChatSerializer");
     }
 
-    @Override public void send(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
+    @Override
+    public void send(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         if ((getProtocolVersion(player) >= 47) && isSpigot() && (this.packetTitle != null)) {
             // First reset previous settings
             resetTitle(player);
             // Send timings first
             Object handle = getHandle(player);
-            Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+            Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
             Object[] actions = this.packetActions.getEnumConstants();
-            Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+            Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
             Object packet = this.packetTitle.getConstructor(this.packetActions, Integer.TYPE, Integer.TYPE, Integer.TYPE).newInstance(actions[2],
                     this.fadeInTime * (this.ticks ? 1 : 20),
                     this.stayTime * (this.ticks ? 1 : 20),
@@ -51,7 +52,7 @@ public class HackTitleManager extends TitleManager {
                 sendPacket.invoke(connection, packet);
             }
             // Send title
-            Object serialized = getMethod(this.nmsChatSerializer, "a", String.class).invoke(null,
+            Object serialized = getMethod(this.nmsChatSerializer, "a","func_150699_a", String.class).invoke(null,
                     "{text:\"" + ChatColor.translateAlternateColorCodes('&', this.getTitle()) + "\",color:" + this.titleColor.name().toLowerCase()
                             + "}");
             packet = this.packetTitle.getConstructor(this.packetActions, Reflection.getNMSClass("IChatBaseComponent"))
@@ -59,35 +60,37 @@ public class HackTitleManager extends TitleManager {
             sendPacket.invoke(connection, packet);
             if (!this.getSubtitle().isEmpty()) {
                 // Send subtitle if present
-                serialized = getMethod(this.nmsChatSerializer, "a", String.class).invoke(null,
+                serialized = getMethod(this.nmsChatSerializer, "a","func_150699_a", String.class).invoke(null,
                         "{text:\"" + ChatColor.translateAlternateColorCodes('&', this.getSubtitle()) + "\",color:" + this.subtitleColor.name()
                                 .toLowerCase() + "}");
-                packet = this.packetTitle.getConstructor(this.packetActions, Reflection.getNMSClass("IChatBaseComponent"))
+                packet = this.packetTitle.getConstructor(this.packetActions, Reflection.getNMSClass("IChatBaseComponent","util.IChatComponent"))
                         .newInstance(actions[1], serialized);
                 sendPacket.invoke(connection, packet);
             }
         }
     }
 
-    @Override public void clearTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
+    @Override
+    public void clearTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         if ((getProtocolVersion(player) >= 47) && isSpigot()) {
             // Send timings first
             Object handle = getHandle(player);
-            Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+            Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
             Object[] actions = this.packetActions.getEnumConstants();
-            Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+            Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
             Object packet = this.packetTitle.getConstructor(this.packetActions).newInstance(actions[3]);
             sendPacket.invoke(connection, packet);
         }
     }
 
-    @Override public void resetTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
+    @Override
+    public void resetTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         if ((getProtocolVersion(player) >= 47) && isSpigot()) {
             // Send timings first
             Object handle = getHandle(player);
-            Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+            Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
             Object[] actions = this.packetActions.getEnumConstants();
-            Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+            Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
             Object packet = this.packetTitle.getConstructor(this.packetActions).newInstance(actions[4]);
             sendPacket.invoke(connection, packet);
         }
@@ -104,7 +107,7 @@ public class HackTitleManager extends TitleManager {
      */
     private int getProtocolVersion(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         Object handle = getHandle(player);
-        Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+        Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
         Object networkManager = getValue("networkManager", connection);
         return (Integer) getMethod("getVersion", networkManager.getClass()).invoke(networkManager);
     }
@@ -127,7 +130,8 @@ public class HackTitleManager extends TitleManager {
     private Class<?> getClass(String namespace) {
         try {
             return Class.forName(namespace);
-        } catch (ClassNotFoundException ignored) {}
+        } catch (ClassNotFoundException ignored) {
+        }
         return null;
     }
 
@@ -141,25 +145,42 @@ public class HackTitleManager extends TitleManager {
         return f.get(obj);
     }
 
-    private Field getField(Class<?> clazz, String name) {
-        try {
-            Field field = clazz.getDeclaredField(name);
-            field.setAccessible(true);
-            return field;
-        } catch (SecurityException | NoSuchFieldException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     private Method getMethod(Class<?> clazz, String name, Class<?>... args) {
+        return getMethod(clazz, name, null, args);
+    }
+
+    private Method getMethod(Class<?> clazz, String name, String mcpName, Class<?>... args) {
         for (Method m : clazz.getMethods()) {
-            if (m.getName().equals(name) && ((args.length == 0) || classListEqual(args, m.getParameterTypes()))) {
+            if ((m.getName().equals(name) || m.getName().equals(mcpName)) && (args.length == 0 || classListEqual(args, m.getParameterTypes()))) {
                 m.setAccessible(true);
                 return m;
             }
         }
         return null;
+    }
+
+    private Field getField(Class<?> clazz, String name) {
+        return getField(clazz, name, null);
+    }
+
+    private Field getField(Class<?> clazz, String name, String mcpName) {
+        if (mcpName != null) {
+            try {
+                Field field = clazz.getDeclaredField(mcpName);
+                field.setAccessible(true);
+                return field;
+            } catch (Throwable ignored) {
+            }
+        }
+        try {
+            Field field = clazz.getDeclaredField(name);
+            field.setAccessible(true);
+            return field;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }

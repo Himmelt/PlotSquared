@@ -12,10 +12,10 @@ public class DefaultTitleManager extends TitleManager {
     /**
      * Create a new 1.8 title.
      *
-     * @param title Title text
-     * @param subtitle Subtitle text
-     * @param fadeInTime Fade in time
-     * @param stayTime Stay on screen time
+     * @param title       Title text
+     * @param subtitle    Subtitle text
+     * @param fadeInTime  Fade in time
+     * @param stayTime    Stay on screen time
      * @param fadeOutTime Fade out time
      */
     DefaultTitleManager(String title, String subtitle, int fadeInTime, int stayTime, int fadeOutTime) {
@@ -25,22 +25,24 @@ public class DefaultTitleManager extends TitleManager {
     /**
      * Load spigot and NMS classes.
      */
-    @Override void loadClasses() {
+    @Override
+    void loadClasses() {
         this.packetTitle = Reflection.getNMSClass("PacketPlayOutTitle");
         this.packetActions = Reflection.getNMSClass("EnumTitleAction");
-        this.chatBaseComponent = Reflection.getNMSClass("IChatBaseComponent");
-        this.nmsChatSerializer = Reflection.getNMSClass("ChatSerializer");
+        this.chatBaseComponent = Reflection.getNMSClass("IChatBaseComponent", "util.IChatComponent");
+        this.nmsChatSerializer = Reflection.getNMSClass("ChatSerializer", "util.IChatComponent$Serializer");
     }
 
-    @Override public void send(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
+    @Override
+    public void send(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         if (this.packetTitle != null) {
             // First reset previous settings
             resetTitle(player);
             // Send timings first
             Object handle = getHandle(player);
-            Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+            Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
             Object[] actions = this.packetActions.getEnumConstants();
-            Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+            Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
             Object packet = this.packetTitle.getConstructor(this.packetActions, this.chatBaseComponent, Integer.TYPE, Integer.TYPE, Integer.TYPE)
                     .newInstance(actions[2], null, this.fadeInTime * (this.ticks ? 1 : 20),
                             this.stayTime * (this.ticks ? 1 : 20), this.fadeOutTime * (this.ticks ? 1 : 20));
@@ -69,9 +71,9 @@ public class DefaultTitleManager extends TitleManager {
     public void clearTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         // Send timings first
         Object handle = getHandle(player);
-        Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+        Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
         Object[] actions = this.packetActions.getEnumConstants();
-        Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+        Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
         Object packet = this.packetTitle.getConstructor(this.packetActions, this.chatBaseComponent).newInstance(actions[3], null);
         sendPacket.invoke(connection, packet);
     }
@@ -88,14 +90,26 @@ public class DefaultTitleManager extends TitleManager {
     public void resetTitle(Player player) throws IllegalArgumentException, ReflectiveOperationException, SecurityException {
         // Send timings first
         Object handle = getHandle(player);
-        Object connection = getField(handle.getClass(), "playerConnection").get(handle);
+        Object connection = getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
         Object[] actions = this.packetActions.getEnumConstants();
-        Method sendPacket = getMethod(connection.getClass(), "sendPacket");
+        Method sendPacket = getMethod(connection.getClass(), "sendPacket", "func_147359_a");
         Object packet = this.packetTitle.getConstructor(this.packetActions, this.chatBaseComponent).newInstance(actions[4], null);
         sendPacket.invoke(connection, packet);
     }
 
     Field getField(Class<?> clazz, String name) {
+        return getField(clazz, name, null);
+    }
+
+    Field getField(Class<?> clazz, String name, String mcpName) {
+        if (mcpName != null) {
+            try {
+                Field field = clazz.getDeclaredField(mcpName);
+                field.setAccessible(true);
+                return field;
+            } catch (Throwable ignored) {
+            }
+        }
         try {
             Field field = clazz.getDeclaredField(name);
             field.setAccessible(true);
@@ -107,8 +121,12 @@ public class DefaultTitleManager extends TitleManager {
     }
 
     Method getMethod(Class<?> clazz, String name, Class<?>... args) {
+        return getMethod(clazz, name, null, args);
+    }
+
+    Method getMethod(Class<?> clazz, String name, String mcpName, Class<?>... args) {
         for (Method m : clazz.getMethods()) {
-            if (m.getName().equals(name) && (args.length == 0 || classListEqual(args, m.getParameterTypes()))) {
+            if ((m.getName().equals(name) || m.getName().equals(mcpName)) && (args.length == 0 || classListEqual(args, m.getParameterTypes()))) {
                 m.setAccessible(true);
                 return m;
             }

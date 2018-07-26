@@ -1,17 +1,11 @@
 package com.plotsquared.bukkit.chat;
 
-import static com.plotsquared.bukkit.chat.TextualComponent.rawText;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonWriter;
-import org.bukkit.Achievement;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.Statistic;
+import org.bukkit.*;
 import org.bukkit.Statistic.Type;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -22,18 +16,11 @@ import org.bukkit.inventory.ItemStack;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 import java.util.logging.Level;
+
+import static com.plotsquared.bukkit.chat.TextualComponent.rawText;
 
 /**
  * Represents a formattable message. Such messages can use elements such as colors, formatting codes, hover and click data, and other features provided by the vanilla Minecraft <a href="http://minecraft.gamepedia.com/Tellraw#Raw_JSON_Text">JSON message formatter</a>.
@@ -85,7 +72,7 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
         dirty = false;
         if (nmsPacketPlayOutChatConstructor == null) {
             try {
-                nmsPacketPlayOutChatConstructor = Reflection.getNMSClass("PacketPlayOutChat").getDeclaredConstructor(Reflection.getNMSClass("IChatBaseComponent"));
+                nmsPacketPlayOutChatConstructor = Reflection.getNMSClass("PacketPlayOutChat", "network.play.server.S02PacketChat").getDeclaredConstructor(Reflection.getNMSClass("IChatBaseComponent","util.IChatComponent"));
                 nmsPacketPlayOutChatConstructor.setAccessible(true);
             } catch (NoSuchMethodException e) {
                 Bukkit.getLogger().log(Level.SEVERE, "Could not find Minecraft method or constructor.", e);
@@ -243,7 +230,7 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
     public FancyMessage achievementTooltip(final Achievement which) {
         try {
             Object achievement = Reflection.getMethod(Reflection.getOBCClass("CraftStatistic"), "getNMSAchievement", Achievement.class).invoke(null, which);
-            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Achievement"), "name").get(achievement));
+            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Achievement", "stats.Achievement"), "name").get(achievement));
         } catch (IllegalAccessException e) {
             Bukkit.getLogger().log(Level.WARNING, "Could not access method.", e);
             return this;
@@ -271,7 +258,8 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
         }
         try {
             Object statistic = Reflection.getMethod(Reflection.getOBCClass("CraftStatistic"), "getNMSStatistic", Statistic.class).invoke(null, which);
-            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic"), "name").get(statistic));
+            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic", "stats.StatBase"),
+                    "name", "field_75975_e").get(statistic));
         } catch (IllegalAccessException e) {
             Bukkit.getLogger().log(Level.WARNING, "Could not access method.", e);
             return this;
@@ -303,7 +291,8 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
         }
         try {
             Object statistic = Reflection.getMethod(Reflection.getOBCClass("CraftStatistic"), "getMaterialStatistic", Statistic.class, Material.class).invoke(null, which, item);
-            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic"), "name").get(statistic));
+            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic", "stats.StatBase"),
+                    "name", "field_75975_e").get(statistic));
         } catch (IllegalAccessException e) {
             Bukkit.getLogger().log(Level.WARNING, "Could not access method.", e);
             return this;
@@ -335,7 +324,8 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
         }
         try {
             Object statistic = Reflection.getMethod(Reflection.getOBCClass("CraftStatistic"), "getEntityStatistic", Statistic.class, EntityType.class).invoke(null, which, entity);
-            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic"), "name").get(statistic));
+            return achievementTooltip((String) Reflection.getField(Reflection.getNMSClass("Statistic", "stats.StatBase"),
+                    "name", "field_75975_e").get(statistic));
         } catch (IllegalAccessException e) {
             Bukkit.getLogger().log(Level.WARNING, "Could not access method.", e);
             return this;
@@ -370,7 +360,10 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
     public FancyMessage itemTooltip(final ItemStack itemStack) {
         try {
             Object nmsItem = Reflection.getMethod(Reflection.getOBCClass("inventory.CraftItemStack"), "asNMSCopy", ItemStack.class).invoke(null, itemStack);
-            return itemTooltip(Reflection.getMethod(Reflection.getNMSClass("ItemStack"), "save", Reflection.getNMSClass("NBTTagCompound")).invoke(nmsItem, Reflection.getNMSClass("NBTTagCompound").newInstance()).toString());
+            return itemTooltip(Reflection.getMethod(Reflection.getNMSClass("ItemStack", "item.ItemStack"), "save", "func_77955_b",
+                    Reflection.getNMSClass("NBTTagCompound", "nbt.NBTTagCompound"))
+                    .invoke(nmsItem, Reflection.getNMSClass("NBTTagCompound", "nbt.NBTTagCompound")
+                            .newInstance()).toString());
         } catch (Exception e) {
             e.printStackTrace();
             return this;
@@ -641,8 +634,10 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
         Player player = (Player) sender;
         try {
             Object handle = Reflection.getHandle(player);
-            Object connection = Reflection.getField(handle.getClass(), "playerConnection").get(handle);
-            Reflection.getMethod(connection.getClass(), "sendPacket", Reflection.getNMSClass("Packet")).invoke(connection, createChatPacket(jsonString));
+            Object connection = Reflection.getField(handle.getClass(), "playerConnection", "field_71135_a").get(handle);
+            Reflection.getMethod(connection.getClass(), "sendPacket", "func_147359_a",
+                    Reflection.getNMSClass("Packet", "network.Packet"))
+                    .invoke(connection, createChatPacket(jsonString));
         } catch (IllegalArgumentException e) {
             Bukkit.getLogger().log(Level.WARNING, "Argument could not be passed.", e);
         } catch (IllegalAccessException e) {
@@ -679,9 +674,9 @@ public class FancyMessage implements JsonRepresentedObject, Cloneable, Iterable<
             int revisionVersion = Integer.parseInt(split[2].substring(1)); // Substring to ignore R
 
             if (minorVersion < 8 || (minorVersion == 8 && revisionVersion == 1)) {
-                chatSerializerClazz = Reflection.getNMSClass("ChatSerializer");
+                chatSerializerClazz = Reflection.getNMSClass("ChatSerializer", "util.IChatComponent$Serializer");
             } else {
-                chatSerializerClazz = Reflection.getNMSClass("IChatBaseComponent$ChatSerializer");
+                chatSerializerClazz = Reflection.getNMSClass("IChatBaseComponent$ChatSerializer", "util.IChatComponent$Serializer");
             }
 
             if (chatSerializerClazz == null) {
