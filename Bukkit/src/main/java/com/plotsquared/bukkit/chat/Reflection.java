@@ -60,8 +60,36 @@ public final class Reflection {
      * @return The class instance representing the specified NMS class, or {@code null} if it could not be loaded.
      */
     public synchronized static Class<?> getNMSClass(String className) {
+        return getNMSClass(className, null);
+    }
+
+    /**
+     * Gets a {@link Class} object representing a type contained within the {@code net.minecraft.server} versioned package.
+     * The class instances returned by this method are cached, such that no lookup will be done twice (unless multiple threads are accessing this method simultaneously).
+     *
+     * @param className   The name of the class, excluding the package, within NMS.
+     * @param fullMcpName The full name of the mcp class.
+     * @return The class instance representing the specified NMS class, or {@code null} if it could not be loaded.
+     */
+    public synchronized static Class<?> getNMSClass(String className, String fullMcpName) {
         if (_loadedNMSClasses.containsKey(className)) {
             return _loadedNMSClasses.get(className);
+        }
+
+        if (_loadedNMSClasses.containsKey(fullMcpName)) {
+            return _loadedNMSClasses.get(fullMcpName);
+        }
+
+
+        if (fullMcpName != null && fullMcpName.startsWith("net.minecraft.")) {
+            try {
+                Class<?> clazz = Class.forName(fullMcpName);
+                _loadedNMSClasses.put(fullMcpName, clazz);
+                return clazz;
+            } catch (Exception ignored) {
+                System.out.println("Mcp class [" + fullMcpName + "] invalid, check NMS class continue...");
+                _loadedNMSClasses.put(fullMcpName, null);
+            }
         }
 
         String fullName = "net.minecraft.server." + getVersion() + className;

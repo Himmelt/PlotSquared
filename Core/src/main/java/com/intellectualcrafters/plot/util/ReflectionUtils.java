@@ -92,6 +92,17 @@ public class ReflectionUtils {
     }
 
     public static Class<?> getNmsClass(String name) {
+        return getNmsClass(name, null);
+    }
+
+    public static Class<?> getNmsClass(String name, String fullMcpName) {
+        if (fullMcpName != null && fullMcpName.startsWith("net.minecraft.")) {
+            try {
+                return Class.forName(fullMcpName);
+            } catch (Exception ignored) {
+                System.out.println("Mcp class [" + fullMcpName + "] invalid, check NMS class continue...");
+            }
+        }
         String className = preClassM + '.' + name;
         return getClass(className);
     }

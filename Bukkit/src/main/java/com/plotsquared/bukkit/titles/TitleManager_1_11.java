@@ -444,8 +444,20 @@ public class TitleManager_1_11 {
     }
 
     private Class<?> getNMSClass(String className) {
-        String fullName = "net.minecraft.server." + getVersion() + className;
+        return getNMSClass(className, null);
+    }
+
+    private Class<?> getNMSClass(String className, String fullMcpName) {
         Class<?> clazz = null;
+        if (fullMcpName != null && fullMcpName.startsWith("net.minecraft.")) {
+            try {
+                clazz = Class.forName(fullMcpName);
+                return clazz;
+            } catch (Exception ignored) {
+                System.out.println("Mcp class [" + fullMcpName + "] invalid, check NMS class continue...");
+            }
+        }
+        String fullName = "net.minecraft.server." + getVersion() + className;
         try {
             clazz = Class.forName(fullName);
         } catch (Exception e) {
