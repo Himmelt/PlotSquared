@@ -56,7 +56,7 @@ public class BukkitLocalQueue_1_8_3 extends BukkitLocalQueue<char[]> {
         this.methodX = classWorld.getMethod("x", classBlockPosition.getRealClass());
         this.fieldSections = classChunk.getField("sections");
         this.fieldWorld = classChunk.getField("world");
-        ReflectionUtils.RefClass classChunkSection = getRefClass("{nms}.ChunkSection");
+        ReflectionUtils.RefClass classChunkSection = getRefClass("{nms}.ChunkSection","world.chunk.storage.ExtendedBlockStorage");
         this.methodGetIdArray = classChunkSection.getMethod("getIdArray");
         this.methodAreNeighborsLoaded = classChunk.getMethod("areNeighborsLoaded", int.class);
         this.classChunkSectionConstructor = classChunkSection.getConstructor(int.class, boolean.class, char[].class);

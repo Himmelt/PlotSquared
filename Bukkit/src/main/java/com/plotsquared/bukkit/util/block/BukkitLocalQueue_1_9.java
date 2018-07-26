@@ -58,7 +58,7 @@ public class BukkitLocalQueue_1_9 extends BukkitLocalQueue<char[]> {
         ReflectionUtils.RefClass classIBlockData = getRefClass("{nms}.IBlockData");
         this.methodGetCombinedId = classBlock.getMethod("getCombinedId", classIBlockData.getRealClass());
         this.methodGetByCombinedId = classBlock.getMethod("getByCombinedId", int.class);
-        ReflectionUtils.RefClass classChunkSection = getRefClass("{nms}.ChunkSection");
+        ReflectionUtils.RefClass classChunkSection = getRefClass("{nms}.ChunkSection","world.chunk.storage.ExtendedBlockStorage");
         this.methodGetBlocks = classChunkSection.getMethod("getBlocks");
         this.methodGetType = classChunkSection.getMethod("getType", int.class, int.class, int.class);
         this.methodSetType = classChunkSection.getMethod("setType", int.class, int.class, int.class, classIBlockData.getRealClass());

@@ -49,7 +49,7 @@ public class SendChunk {
         this.methodGetHandleChunk = classCraftChunk.getMethod("getHandle");
         RefClass classChunk = getRefClass("{nms}.Chunk", "world.chunk.Chunk");
         this.methodInitLighting = classChunk.getMethod("initLighting", "func_76603_b");
-        RefClass classMapChunk = getRefClass("{nms}.PacketPlayOutMapChunk");
+        RefClass classMapChunk = getRefClass("{nms}.PacketPlayOutMapChunk","network.play.server.S21PacketChunkData");
         if (PS.get().checkVersion(PS.get().IMP.getServerVersion(), BukkitVersion.v1_9_4)) {
             //this works for 1.9.4 and 1.10
             tempMapChunk = classMapChunk.getConstructor(classChunk.getRealClass(), int.class);
