@@ -6,24 +6,19 @@ import com.intellectualcrafters.plot.util.MainUtil;
 import com.intellectualcrafters.plot.util.ReflectionUtils;
 import com.intellectualcrafters.plot.util.TaskManager;
 import com.plotsquared.bukkit.util.SendChunk;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 
+import java.util.*;
 
 import static com.intellectualcrafters.plot.util.ReflectionUtils.getRefClass;
 
 public class BukkitLocalQueue_1_7 extends BukkitLocalQueue<PlotBlock[]> {
 
-    private final ReflectionUtils.RefClass classBlock = getRefClass("{nms}.Block");
-    private final ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk");
-    private final ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World");
+    private final ReflectionUtils.RefClass classBlock = getRefClass("{nms}.Block", "block.Block");
+    private final ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk", "world.chunk.Chunk");
+    private final ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World", "world.World");
     private final ReflectionUtils.RefClass classCraftWorld = getRefClass("{cb}.CraftWorld");
     private final ReflectionUtils.RefClass classCraftChunk = getRefClass("{cb}.CraftChunk");
     private final ReflectionUtils.RefMethod methodGetHandle;
@@ -39,11 +34,11 @@ public class BukkitLocalQueue_1_7 extends BukkitLocalQueue<PlotBlock[]> {
     public BukkitLocalQueue_1_7(String world) throws NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         super(world);
         this.methodGetHandle = this.classCraftWorld.getMethod("getHandle");
-        this.methodGetChunkAt = this.classWorld.getMethod("getChunkAt", int.class, int.class);
-        this.methodA = this.classChunk.getMethod("a", int.class, int.class, int.class, this.classBlock, int.class);
-        this.methodGetById = this.classBlock.getMethod("getById", int.class);
+        this.methodGetChunkAt = this.classWorld.getMethod("getChunkAt", "func_72964_e", int.class, int.class);
+        this.methodA = this.classChunk.getMethod("a", "func_150807_a", int.class, int.class, int.class, this.classBlock, int.class);
+        this.methodGetById = this.classBlock.getMethod("getById", "func_149729_e", int.class);
         this.methodGetHandleChunk = this.classCraftChunk.getMethod("getHandle");
-        this.methodInitLighting = this.classChunk.getMethod("initLighting");
+        this.methodInitLighting = this.classChunk.getMethod("initLighting", "func_76603_b");
         this.sendChunk = new SendChunk();
         TaskManager.runTaskRepeat(new Runnable() {
             @Override

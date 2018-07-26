@@ -48,11 +48,11 @@ public class BukkitLocalQueue_1_8_3 extends BukkitLocalQueue<char[]> {
         ReflectionUtils.RefClass classCraftChunk = getRefClass("{cb}.CraftChunk");
         ReflectionUtils.RefClass classCraftWorld = getRefClass("{cb}.CraftWorld");
         this.methodGetHandleChunk = classCraftChunk.getMethod("getHandle");
-        ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk");
-        this.methodInitLighting = classChunk.getMethod("initLighting");
+        ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk","world.chunk.Chunk");
+        this.methodInitLighting = classChunk.getMethod("initLighting","func_76603_b");
         ReflectionUtils.RefClass classBlockPosition = getRefClass("{nms}.BlockPosition");
         this.classBlockPositionConstructor = classBlockPosition.getConstructor(int.class, int.class, int.class);
-        ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World");
+        ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World","world.World");
         this.methodX = classWorld.getMethod("x", classBlockPosition.getRealClass());
         this.fieldSections = classChunk.getField("sections");
         this.fieldWorld = classChunk.getField("world");

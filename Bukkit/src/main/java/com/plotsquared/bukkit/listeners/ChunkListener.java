@@ -9,8 +9,6 @@ import com.intellectualcrafters.plot.util.ReflectionUtils.RefClass;
 import com.intellectualcrafters.plot.util.ReflectionUtils.RefField;
 import com.intellectualcrafters.plot.util.ReflectionUtils.RefMethod;
 import com.intellectualcrafters.plot.util.TaskManager;
-import java.lang.reflect.Method;
-import java.util.HashSet;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -29,6 +27,8 @@ import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
+import java.lang.reflect.Method;
+import java.util.HashSet;
 
 import static com.intellectualcrafters.plot.util.ReflectionUtils.getRefClass;
 
@@ -41,7 +41,7 @@ public class ChunkListener implements Listener {
     public ChunkListener() {
         if (Settings.Chunk_Processor.AUTO_TRIM) {
             try {
-                RefClass classChunk = getRefClass("{nms}.Chunk");
+                RefClass classChunk = getRefClass("{nms}.Chunk", "world.chunk.Chunk");
                 RefClass classCraftChunk = getRefClass("{cb}.CraftChunk");
                 this.mustSave = classChunk.getField("mustSave");
                 this.methodGetHandleChunk = classCraftChunk.getMethod("getHandle");
@@ -66,8 +66,13 @@ public class ChunkListener implements Listener {
                         if (!PS.get().hasPlotArea(worldName)) {
                             continue;
                         }
-                        Object w = world.getClass().getDeclaredMethod("getHandle").invoke(world);
-                        Object chunkMap = w.getClass().getDeclaredMethod("getPlayerChunkMap").invoke(w);
+                        Object mcWorld = world.getClass().getDeclaredMethod("getHandle").invoke(world);
+                        Object chunkMap;
+                        try {
+                            chunkMap = mcWorld.getClass().getDeclaredMethod("func_73040_p").invoke(mcWorld);
+                        } catch (Throwable ignored) {
+                            chunkMap = mcWorld.getClass().getDeclaredMethod("getPlayerChunkMap").invoke(mcWorld);
+                        }
                         Method methodIsChunkInUse = chunkMap.getClass().getDeclaredMethod("isChunkInUse", int.class, int.class);
                         Chunk[] chunks = world.getLoadedChunks();
                         for (Chunk chunk : chunks) {
@@ -162,12 +167,12 @@ public class ChunkListener implements Listener {
             event.setCancelled(true);
         }
     }
-    
+
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         processChunk(event.getChunk(), false);
     }
-    
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onItemSpawn(ItemSpawnEvent event) {
         Item entity = event.getEntity();
@@ -189,14 +194,14 @@ public class ChunkListener implements Listener {
             this.lastChunk = null;
         }
     }
-    
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPhysics(BlockPhysicsEvent event) {
         if (Settings.Chunk_Processor.DISABLE_PHYSICS) {
             event.setCancelled(true);
         }
     }
-    
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(CreatureSpawnEvent event) {
         LivingEntity entity = event.getEntity();

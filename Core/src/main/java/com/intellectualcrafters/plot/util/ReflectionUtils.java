@@ -1,15 +1,7 @@
 package com.intellectualcrafters.plot.util;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * @author DPOH-VAR
@@ -83,7 +75,8 @@ public class ReflectionUtils {
                 Object value = field.get(null);
                 try {
                     list.add((T) value);
-                } catch (ClassCastException ignored) {}
+                } catch (ClassCastException ignored) {
+                }
             }
         } catch (IllegalAccessException | IllegalArgumentException | SecurityException e) {
             e.printStackTrace();
@@ -115,7 +108,8 @@ public class ReflectionUtils {
     public static Class<?> getUtilClass(String name) {
         try {
             return Class.forName(name); //Try before 1.8 first
-        } catch (ClassNotFoundException ignored) {}
+        } catch (ClassNotFoundException ignored) {
+        }
         try {
             return Class.forName("net.minecraft.util." + name); //Not 1.8
         } catch (ClassNotFoundException ignored) {
@@ -229,12 +223,33 @@ public class ReflectionUtils {
      * {nm} to net.minecraft
      *
      * @param className possible class paths
-     *
      * @return RefClass object
-     *
      * @throws ClassNotFoundException if no class found
      */
     public static RefClass getRefClass(String className) throws ClassNotFoundException {
+        return getRefClass(className, null);
+    }
+
+    /**
+     * Get class for name. Replace {nms} to net.minecraft.server.V*. Replace {cb} to org.bukkit.craftbukkit.V*. Replace
+     * {nm} to net.minecraft
+     *
+     * @param className possible class paths
+     * @param mcpName   The name of the mcp class.
+     * @return RefClass object
+     * @throws ClassNotFoundException if no class found
+     */
+    public static RefClass getRefClass(String className, String mcpName) throws ClassNotFoundException {
+        if (mcpName != null) {
+            mcpName = "net.minecraft." + mcpName;
+            try {
+                Class<?> clazz = Class.forName(mcpName);
+                return getRefClass(clazz);
+            } catch (Exception ignored) {
+                System.out.println("Mcp class [" + mcpName + "] invalid, check NMS class continue...");
+            }
+        }
+
         className = className.replace("{cb}", preClassB).replace("{nms}", preClassM).replace("{nm}", "net.minecraft");
         return getRefClass(Class.forName(className));
     }
@@ -243,7 +258,6 @@ public class ReflectionUtils {
      * get RefClass object by real class
      *
      * @param clazz class
-     *
      * @return RefClass based on passed class
      */
     public static RefClass getRefClass(Class clazz) {
@@ -274,7 +288,6 @@ public class ReflectionUtils {
          * see {@link Class#isInstance(Object)}
          *
          * @param object the object to check
-         *
          * @return true if object is an instance of this class
          */
         public boolean isInstance(Object object) {
@@ -286,12 +299,22 @@ public class ReflectionUtils {
          *
          * @param name  name
          * @param types method parameters. can be Class or RefClass
-         *
          * @return RefMethod object
-         *
          * @throws RuntimeException if method not found
          */
         public RefMethod getMethod(String name, Object... types) throws NoSuchMethodException {
+            return getMethod(name, null, types);
+        }
+
+        /**
+         * get existing method by name and types
+         *
+         * @param name  name
+         * @param types method parameters. can be Class or RefClass
+         * @return RefMethod object
+         * @throws RuntimeException if method not found
+         */
+        public RefMethod getMethod(String name, String mcpName, Object... types) throws NoSuchMethodException {
             Class[] classes = new Class[types.length];
             int i = 0;
             for (Object e : types) {
@@ -301,6 +324,16 @@ public class ReflectionUtils {
                     classes[i++] = ((RefClass) e).getRealClass();
                 } else {
                     classes[i++] = e.getClass();
+                }
+            }
+            if (mcpName != null) {
+                try {
+                    return new RefMethod(this.clazz.getMethod(mcpName, classes));
+                } catch (NoSuchMethodException ignored) {
+                }
+                try {
+                    return new RefMethod(this.clazz.getDeclaredMethod(mcpName, classes));
+                } catch (NoSuchMethodException ignored) {
                 }
             }
             try {
@@ -314,9 +347,7 @@ public class ReflectionUtils {
          * get existing constructor by types
          *
          * @param types parameters. can be Class or RefClass
-         *
          * @return RefMethod object
-         *
          * @throws RuntimeException if constructor not found
          */
         public RefConstructor getConstructor(Object... types) throws NoSuchMethodException {
@@ -342,9 +373,7 @@ public class ReflectionUtils {
          * find method by type parameters
          *
          * @param types parameters. can be Class or RefClass
-         *
          * @return RefMethod object
-         *
          * @throws RuntimeException if method not found
          */
         public RefMethod findMethod(Object... types) {
@@ -382,9 +411,7 @@ public class ReflectionUtils {
          * find method by name
          *
          * @param names possible names of method
-         *
          * @return RefMethod object
-         *
          * @throws RuntimeException if method not found
          */
         public RefMethod findMethodByName(String... names) {
@@ -405,9 +432,7 @@ public class ReflectionUtils {
          * find method by return value
          *
          * @param type type of returned value
-         *
          * @return RefMethod
-         *
          * @throws RuntimeException if method not found
          */
         public RefMethod findMethodByReturnType(RefClass type) {
@@ -418,9 +443,7 @@ public class ReflectionUtils {
          * find method by return value
          *
          * @param type type of returned value
-         *
          * @return RefMethod
-         *
          * @throws RuntimeException if method not found
          */
         public RefMethod findMethodByReturnType(Class type) {
@@ -442,9 +465,7 @@ public class ReflectionUtils {
          * find constructor by number of arguments
          *
          * @param number number of arguments
-         *
          * @return RefConstructor
-         *
          * @throws RuntimeException if constructor not found
          */
         public RefConstructor findConstructor(int number) {
@@ -463,12 +484,27 @@ public class ReflectionUtils {
          * get field by name
          *
          * @param name field name
-         *
          * @return RefField
-         *
          * @throws RuntimeException if field not found
          */
         public RefField getField(String name) throws NoSuchFieldException {
+            return getField(name, null);
+        }
+
+        /**
+         * get field by name
+         *
+         * @param name field name
+         * @return RefField
+         * @throws RuntimeException if field not found
+         */
+        public RefField getField(String name, String mcpName) throws NoSuchFieldException {
+            if (mcpName != null) {
+                try {
+                    return new RefField(this.clazz.getField(mcpName));
+                } catch (NoSuchFieldException ignored) {
+                }
+            }
             try {
                 return new RefField(this.clazz.getField(name));
             } catch (NoSuchFieldException ignored) {
@@ -480,9 +516,7 @@ public class ReflectionUtils {
          * find field by type
          *
          * @param type field type
-         *
          * @return RefField
-         *
          * @throws RuntimeException if field not found
          */
         public RefField findField(RefClass type) {
@@ -493,9 +527,7 @@ public class ReflectionUtils {
          * find field by type
          *
          * @param type field type
-         *
          * @return RefField
-         *
          * @throws RuntimeException if field not found
          */
         public RefField findField(Class type) {
@@ -551,7 +583,6 @@ public class ReflectionUtils {
          * apply method to object
          *
          * @param e object to which the method is applied
-         *
          * @return RefExecutor with method call(...)
          */
         public RefExecutor of(Object e) {
@@ -562,7 +593,6 @@ public class ReflectionUtils {
          * call static method
          *
          * @param params sent parameters
-         *
          * @return return value
          */
         public Object call(Object... params) {
@@ -585,9 +615,7 @@ public class ReflectionUtils {
              * apply method for selected object
              *
              * @param params sent parameters
-             *
              * @return return value
-             *
              * @throws RuntimeException if something went wrong
              */
             public Object call(Object... params) {
@@ -630,14 +658,12 @@ public class ReflectionUtils {
          * create new instance with constructor
          *
          * @param params parameters for constructor
-         *
          * @return new object
-         *
          * @throws ReflectiveOperationException
          * @throws IllegalArgumentException
          */
         public Object create(Object... params) throws ReflectiveOperationException, IllegalArgumentException {
-                return this.constructor.newInstance(params);
+            return this.constructor.newInstance(params);
         }
     }
 
@@ -675,7 +701,6 @@ public class ReflectionUtils {
          * apply fiend for object
          *
          * @param e applied object
-         *
          * @return RefExecutor with getter and setter
          */
         public RefExecutor of(Object e) {

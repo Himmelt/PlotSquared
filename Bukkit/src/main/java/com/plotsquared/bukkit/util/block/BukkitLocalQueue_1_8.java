@@ -24,11 +24,11 @@ import org.bukkit.block.Block;
 public class BukkitLocalQueue_1_8 extends BukkitLocalQueue<PlotBlock[]> {
 
     private final ReflectionUtils.RefMethod methodInitLighting;
-    private final ReflectionUtils.RefClass classBlock = getRefClass("{nms}.Block");
+    private final ReflectionUtils.RefClass classBlock = getRefClass("{nms}.Block", "block.Block");
     private final ReflectionUtils.RefClass classBlockPosition = getRefClass("{nms}.BlockPosition");
     private final ReflectionUtils.RefClass classIBlockData = getRefClass("{nms}.IBlockData");
-    private final ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk");
-    private final ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World");
+    private final ReflectionUtils.RefClass classChunk = getRefClass("{nms}.Chunk","world.chunk.Chunk");
+    private final ReflectionUtils.RefClass classWorld = getRefClass("{nms}.World","world.World");
     private final ReflectionUtils.RefClass classCraftWorld = getRefClass("{cb}.CraftWorld");
     private final HashMap<ChunkWrapper, Chunk> toUpdate = new HashMap<>();
     private final ReflectionUtils.RefMethod methodGetHandle;
@@ -41,7 +41,7 @@ public class BukkitLocalQueue_1_8 extends BukkitLocalQueue<PlotBlock[]> {
 
     public BukkitLocalQueue_1_8(String world) throws NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         super(world);
-        this.methodInitLighting = this.classChunk.getMethod("initLighting");
+        this.methodInitLighting = this.classChunk.getMethod("initLighting","func_76603_b");
         this.constructorBlockPosition = this.classBlockPosition.getConstructor(int.class, int.class, int.class);
         this.methodGetByCombinedId = this.classBlock.getMethod("getByCombinedId", int.class);
         this.methodGetHandle = this.classCraftWorld.getMethod("getHandle");
